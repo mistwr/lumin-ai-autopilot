@@ -22,24 +22,46 @@
 <label for="tenant">Empresa de demonstração</label><select id="tenant"><option value="demo-a">Empresa Demo A</option><option value="demo-b">Empresa Demo B</option></select>
 <label for="name">Nome da campanha</label><input id="name" maxlength="64" value="Campanha piloto" autocomplete="off">
 <label for="count">Número de leads fictícias (1–500)</label><input id="count" type="number" min="1" max="500" value="25">
-<button id="run" type="button">Gerar tarefas simuladas</button><p id="notice" role="status" aria-live="polite"></p>
+<button id="run" type="button">Executar equipa de agentes</button> <button id="stop" type="button" style="background:#ffb7b7">Parar agentes</button><p class="muted" id="agentstate">7 agentes locais · sem ligação a serviços externos</p><p id="notice" role="status" aria-live="polite"></p>
 </div>
+<div class="section card"><h2>Resultados dos agentes</h2><div id="results" aria-live="polite" class="muted">Executa uma campanha para visualizar os resultados.</div></div>
 <div class="section card"><h2>Histórico de campanhas</h2><div class="history-list" id="history"><p class="muted">Ainda não há simulações.</p></div></div>
 </main><footer>Protótipo independente · sem backend · sem persistência · sem ações externas</footer>
+<script src="./agents.js"></script>
 <script>
 'use strict';
 const history=[];const el=id=>document.getElementById(id);
+el('stop').addEventListener('click',()=>{
+ LuminAgents.pause();el('agentstate').textContent='Agentes pausados. Nenhuma execução nova permitida.';
+ el('run').disabled=true;
+});
 el('run').addEventListener('click',()=>{
  const count=Number(el('count').value),name=el('name').value.trim(),tenant=el('tenant').value;
- if(!Number.isSafeInteger(count)||count<1||count>500||!name){el('notice').textContent='Introduz um nome e entre 1 e 500 leads.';return;}
- history.push({name,tenant,count});el('campaigns').textContent=String(history.length);
- el('tasks').textContent=String(history.reduce((sum,x)=>sum+x.count,0));
- el('history').replaceChildren(...history.slice().reverse().map(x=>{
-  const card=document.createElement('article');card.className='history-item';
-  const info=document.createElement('div'),title=document.createElement('strong'),details=document.createElement('small'),status=document.createElement('span');
-  title.textContent=x.name;details.textContent=x.tenant+' · '+x.count+' tarefas';status.className='history-status';status.textContent='A aguardar aprovação';
-  info.append(title,details);card.append(info,status);return card;
- }));
- el('notice').textContent=count+' tarefas fictícias preparadas. Nenhuma ação externa executada.';
+ try {
+  const run=LuminAgents.start({tenant,name,count});
+  history.push({name,tenant,count});
+  el('campaigns').textContent=String(history.length);
+  el('tasks').textContent=String(history.reduce((sum,x)=>sum+x.count,0));
+  el('history').replaceChildren(...history.slice().reverse().map(x=>{
+   const card=document.createElement('article');card.className='history-item';
+   const info=document.createElement('div'),title=document.createElement('strong'),details=document.createElement('small'),status=document.createElement('span');
+   title.textContent=x.name;details.textContent=x.tenant+' · '+x.count+' tarefas';status.className='history-status';status.textContent='A aguardar aprovação';
+   info.append(title,details);card.append(info,status);return card;
+  }));
+  const results=el('results');results.replaceChildren();
+  const summary=document.createElement('p');
+  summary.textContent=run.metrics.processed+' leads fictícias analisadas · '+run.metrics.interested+' com pontuação ≥ 70 · '+run.steps.length+' etapas executadas · '+run.durationMs+' ms';
+  results.append(summary);
+  const list=document.createElement('div');list.className='history-list';
+  for(const agent of LuminAgents.roles){
+   const row=document.createElement('div');row.className='history-item';
+   const name=document.createElement('strong');name.textContent=agent.name;
+   const status=document.createElement('span');status.className='history-status';status.textContent=run.metrics.processed+' processadas';
+   row.append(name,status);list.append(row);
+  }
+  results.append(list);
+  el('agentstate').textContent='7 agentes executados · '+run.status+' · chamadas e publicações: 0';
+  el('notice').textContent='Fluxo simulado executado. Nenhuma ação externa realizada.';
+ } catch(error){el('notice').textContent=error.message;}
 });
 </script></body></html>
