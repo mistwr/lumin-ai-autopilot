@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-PT">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumin AI Autopilot — Demo</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,Arial;background:#080e1d;color:#e8efff}*{box-sizing:border-box}body{margin:0}header{padding:22px max(20px,calc((100vw - 1100px)/2));border-bottom:1px solid #26334b;background:#101a2c;display:flex;justify-content:space-between;gap:15px;align-items:center}h1{font-size:22px;margin:0}main{max-width:1100px;margin:auto;padding:28px 20px}h2{font-size:18px;margin:0 0 14px}.muted{color:#a4b1c8}.tag{border:1px solid #46618a;padding:7px 10px;border-radius:20px;font-size:12px;color:#b7d0ff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#121e33;border:1px solid #293c58;border-radius:15px;padding:20px}.metric{font-size:30px;font-weight:750;margin:9px 0}.section{margin-top:24px}.agents{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.agent{padding:18px;background:#17253b;border-radius:12px}.agent span{display:block;margin-top:8px;color:#9fb2cf;font-size:12px}label{display:block;margin:12px 0 6px;color:#c3d3ec}input,select{background:#0b1527;color:white;border:1px solid #405579;border-radius:9px;padding:11px;width:100%}button{background:#4e8dff;color:#061226;border:0;padding:12px 18px;border-radius:9px;font-weight:700;cursor:pointer;margin-top:15px}button:hover{background:#81afff}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:12px;border-bottom:1px solid #2a3b53}small{color:#a4b1c8}#notice{min-height:22px;color:#9be3ba}footer{padding:20px;text-align:center;color:#8da1bf}@media(max-width:800px){.grid,.agents{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid,.agents{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
+</style></head>
+<body>
+<header><div><h1>✦ Lumin AI Autopilot</h1><small>Central comercial autónoma · Protótipo local</small></div><div class="tag">MODO SIMULAÇÃO · SEM CONTACTOS REAIS</div></header>
+<main>
+<div class="grid">
+<div class="card"><div class="muted">Campanhas simuladas</div><div class="metric" id="campaigns">0</div></div>
+<div class="card"><div class="muted">Tarefas preparadas</div><div class="metric" id="tasks">0</div></div>
+<div class="card"><div class="muted">Chamadas reais</div><div class="metric">0</div></div>
+<div class="card"><div class="muted">Vendas reais</div><div class="metric">0</div></div>
+</div>
+<div class="section"><h2>Equipa de agentes</h2><div class="agents">
+<div class="agent">🔎 Prospector<span>Pesquisa simulada</span></div><div class="agent">🧠 Qualificador<span>Em preparação</span></div>
+<div class="agent">📞 Vendedor IA<span>Desativado</span></div><div class="agent">📊 Supervisor<span>Auditoria local</span></div>
+</div></div>
+<div class="section card"><h2>Nova campanha fictícia</h2><p class="muted">Os dados ficam apenas nesta página. Não existe ligação a CRM, telefone ou redes sociais.</p>
+<label for="tenant">Empresa de demonstração</label><select id="tenant"><option value="demo-a">Empresa Demo A</option><option value="demo-b">Empresa Demo B</option></select>
+<label for="name">Nome da campanha</label><input id="name" maxlength="64" value="Campanha piloto" autocomplete="off">
+<label for="count">Número de leads fictícias (1–500)</label><input id="count" type="number" min="1" max="500" value="25">
+<button id="run" type="button">Gerar tarefas simuladas</button><p id="notice" role="status" aria-live="polite"></p>
+</div>
+<div class="section card"><h2>Histórico de campanhas</h2><div style="overflow:auto"><table><thead><tr><th>Campanha</th><th>Empresa</th><th>Tarefas</th><th>Estado</th></tr></thead><tbody id="history"><tr><td colspan="4" class="muted">Ainda não há simulações.</td></tr></tbody></table></div></div>
+</main><footer>Protótipo independente · sem backend · sem persistência · sem ações externas</footer>
+<script>
+'use strict';
+const history=[];const el=id=>document.getElementById(id);
+el('run').addEventListener('click',()=>{
+ const count=Number(el('count').value),name=el('name').value.trim(),tenant=el('tenant').value;
+ if(!Number.isSafeInteger(count)||count<1||count>500||!name){el('notice').textContent='Introduz um nome e entre 1 e 500 leads.';return;}
+ history.push({name,tenant,count});el('campaigns').textContent=String(history.length);
+ el('tasks').textContent=String(history.reduce((sum,x)=>sum+x.count,0));
+ el('history').replaceChildren(...history.slice().reverse().map(x=>{
+  const tr=document.createElement('tr');
+  for(const value of [x.name,x.tenant,String(x.count),'A aguardar aprovação']){const td=document.createElement('td');td.textContent=value;tr.append(td);}
+  return tr;
+ }));
+ el('notice').textContent=count+' tarefas fictícias preparadas. Nenhuma ação externa executada.';
+});
+</script></body></html>
