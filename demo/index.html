@@ -22,7 +22,7 @@
 <label for="tenant">Empresa de demonstração</label><select id="tenant"><option value="demo-a">Empresa Demo A</option><option value="demo-b">Empresa Demo B</option></select>
 <label for="name">Nome da campanha</label><input id="name" maxlength="64" value="Campanha piloto" autocomplete="off">
 <label for="count">Número de leads fictícias (1–500)</label><input id="count" type="number" min="1" max="500" value="25">
-<button id="run" type="button">Executar equipa de agentes</button> <button id="stop" type="button" style="background:#ffb7b7">Parar agentes</button><p class="muted" id="agentstate">7 agentes locais · sem ligação a serviços externos</p><p id="notice" role="status" aria-live="polite"></p>
+<button id="run" type="button">Executar equipa de agentes</button> <button id="serverrun" type="button">Testar agentes no servidor</button> <button id="stop" type="button" style="background:#ffb7b7">Parar agentes</button><p class="muted" id="agentstate">7 agentes locais · sem ligação a serviços externos</p><p id="notice" role="status" aria-live="polite"></p>
 </div>
 <div class="section card"><h2>Resultados dos agentes</h2><div id="results" aria-live="polite" class="muted">Executa uma campanha para visualizar os resultados.</div></div>
 <div class="section card"><h2>Histórico de campanhas</h2><div class="history-list" id="history"><p class="muted">Ainda não há simulações.</p></div></div>
@@ -31,6 +31,21 @@
 <script>
 'use strict';
 const history=[];const el=id=>document.getElementById(id);
+el('serverrun').addEventListener('click',async()=>{
+ const btn=el('serverrun');btn.disabled=true;
+ el('notice').textContent='A executar agentes no servidor Netlify...';
+ try {
+  const count=Math.min(25,Number(el('count').value));
+  const response=await fetch('/.netlify/functions/run-sandbox',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({count,tenant:el('tenant').value})});
+  if(!response.ok)throw Error('Servidor respondeu '+response.status);
+  const data=await response.json();
+  el('notice').textContent='Servidor: '+data.processed+' leads fictícias, '+data.steps+' etapas executadas. Ações externas: '+data.externalActions+'.';
+  const box=el('results');box.replaceChildren();
+  const line=document.createElement('p');line.textContent='Execução no servidor · '+data.at+' · '+data.qualified+' qualificadas · aprovação obrigatória';
+  box.append(line);
+ } catch(e){el('notice').textContent='Falha no teste do servidor: '+e.message;}
+ finally{btn.disabled=false;}
+});
 el('stop').addEventListener('click',()=>{
  LuminAgents.pause();el('agentstate').textContent='Agentes pausados. Nenhuma execução nova permitida.';
  el('run').disabled=true;
