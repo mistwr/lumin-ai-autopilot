@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-PT">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumin AI Autopilot — Demo</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,Arial;background:#080e1d;color:#e8efff}*{box-sizing:border-box}body{margin:0}header{padding:22px max(20px,calc((100vw - 1100px)/2));border-bottom:1px solid #26334b;background:#101a2c;display:flex;justify-content:space-between;gap:15px;align-items:center}h1{font-size:22px;margin:0}main{max-width:1100px;margin:auto;padding:28px 20px}h2{font-size:18px;margin:0 0 14px}.muted{color:#a4b1c8}.tag{border:1px solid #46618a;padding:7px 10px;border-radius:20px;font-size:12px;color:#b7d0ff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#121e33;border:1px solid #293c58;border-radius:15px;padding:20px}.metric{font-size:30px;font-weight:750;margin:9px 0}.section{margin-top:24px}.agents{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.agent{padding:18px;background:#17253b;border-radius:12px}.agent span{display:block;margin-top:8px;color:#9fb2cf;font-size:12px}label{display:block;margin:12px 0 6px;color:#c3d3ec}input,select{background:#0b1527;color:white;border:1px solid #405579;border-radius:9px;padding:11px;width:100%}button{background:#4e8dff;color:#061226;border:0;padding:12px 18px;border-radius:9px;font-weight:700;cursor:pointer;margin-top:15px}button:hover{background:#81afff} .history-list{display:grid;gap:12px}.history-item{padding:15px;border:1px solid #354867;border-radius:12px;background:#0c172a;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.history-item strong{display:block;overflow-wrap:anywhere}.history-item small{display:block;margin-top:5px}.history-status{color:#a8c6ff;font-size:12px;border:1px solid #45628c;padding:6px 10px;border-radius:18px}small{color:#a4b1c8}#notice{min-height:22px;color:#9be3ba}footer{padding:20px;text-align:center;color:#8da1bf}@media(max-width:800px){.grid,.agents{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid,.agents{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
+</style></head>
+<body>
+<header><div><h1>✦ Lumin AI Autopilot</h1><small>Central comercial autónoma · Protótipo local</small></div><div class="tag">MODO SIMULAÇÃO · SEM CONTACTOS REAIS</div></header>
+<main>
+<div class="grid">
+<div class="card"><div class="muted">Campanhas simuladas</div><div class="metric" id="campaigns">0</div></div>
+<div class="card"><div class="muted">Tarefas preparadas</div><div class="metric" id="tasks">0</div></div>
+<div class="card"><div class="muted">Chamadas reais</div><div class="metric">0</div></div>
+<div class="card"><div class="muted">Vendas reais</div><div class="metric">0</div></div>
+</div>
+<div class="section"><h2>Equipa de agentes</h2><div class="agents">
+<div class="agent">🔎 Prospector<span>Pesquisa simulada</span></div><div class="agent">🧠 Qualificador<span>Em preparação</span></div>
+<div class="agent">📞 Vendedor IA<span>Desativado</span></div><div class="agent">📊 Supervisor<span>Auditoria local</span></div>
+</div></div>
+<div class="section card"><h2>Nova campanha fictícia</h2><p class="muted">Os dados ficam apenas nesta página. Não existe ligação a CRM, telefone ou redes sociais.</p>
+<label for="tenant">Empresa de demonstração</label><select id="tenant"><option value="demo-a">Empresa Demo A</option><option value="demo-b">Empresa Demo B</option></select>
+<label for="name">Nome da campanha</label><input id="name" maxlength="64" value="Campanha piloto" autocomplete="off">
+<label for="count">Número de leads fictícias (1–500)</label><input id="count" type="number" min="1" max="500" value="25">
+<button id="run" type="button">Executar equipa de agentes</button> <button id="serverrun" type="button">Testar agentes no servidor</button> <button id="stop" type="button" style="background:#ffb7b7">Parar agentes</button><p class="muted" id="agentstate">7 agentes locais · sem ligação a serviços externos</p><p id="notice" role="status" aria-live="polite"></p>
+</div>
+<div class="section card"><h2>Resultados dos agentes</h2><div id="results" aria-live="polite" class="muted">Executa uma campanha para visualizar os resultados.</div></div>
+<div class="section card"><h2>Histórico de campanhas</h2><div class="history-list" id="history"><p class="muted">Ainda não há simulações.</p></div></div>
+</main><footer>Protótipo independente · sem backend · sem persistência · sem ações externas</footer>
+<script src="./agents.js"></script>
+<script>
+'use strict';
+const history=[];const el=id=>document.getElementById(id);
+el('serverrun').addEventListener('click',async()=>{
+ const btn=el('serverrun');btn.disabled=true;
+ el('notice').textContent='A executar agentes no servidor Netlify...';
+ try {
+  const count=Math.min(25,Number(el('count').value));
+  const response=await fetch('/.netlify/functions/run-sandbox',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({count,tenant:el('tenant').value})});
+  if(!response.ok)throw Error('Servidor respondeu '+response.status);
+  const data=await response.json();
+  el('notice').textContent='Servidor: '+data.processed+' leads fictícias, '+data.steps+' etapas executadas. Ações externas: '+data.externalActions+'.';
+  const box=el('results');box.replaceChildren();
+  const line=document.createElement('p');line.textContent='Execução no servidor · '+data.at+' · '+data.qualified+' qualificadas · aprovação obrigatória';
+  box.append(line);
+ } catch(e){el('notice').textContent='Falha no teste do servidor: '+e.message;}
+ finally{btn.disabled=false;}
+});
+el('stop').addEventListener('click',()=>{
+ LuminAgents.pause();el('agentstate').textContent='Agentes pausados. Nenhuma execução nova permitida.';
+ el('run').disabled=true;
+});
+el('run').addEventListener('click',()=>{
+ const count=Number(el('count').value),name=el('name').value.trim(),tenant=el('tenant').value;
+ try {
+  const run=LuminAgents.start({tenant,name,count});
+  history.push({name,tenant,count});
+  el('campaigns').textContent=String(history.length);
+  el('tasks').textContent=String(history.reduce((sum,x)=>sum+x.count,0));
+  el('history').replaceChildren(...history.slice().reverse().map(x=>{
+   const card=document.createElement('article');card.className='history-item';
+   const info=document.createElement('div'),title=document.createElement('strong'),details=document.createElement('small'),status=document.createElement('span');
+   title.textContent=x.name;details.textContent=x.tenant+' · '+x.count+' tarefas';status.className='history-status';status.textContent='A aguardar aprovação';
+   info.append(title,details);card.append(info,status);return card;
+  }));
+  const results=el('results');results.replaceChildren();
+  const summary=document.createElement('p');
+  summary.textContent=run.metrics.processed+' leads fictícias analisadas · '+run.metrics.interested+' com pontuação ≥ 70 · '+run.steps.length+' etapas executadas · '+run.durationMs+' ms';
+  results.append(summary);
+  const list=document.createElement('div');list.className='history-list';
+  for(const agent of LuminAgents.roles){
+   const row=document.createElement('div');row.className='history-item';
+   const name=document.createElement('strong');name.textContent=agent.name;
+   const status=document.createElement('span');status.className='history-status';status.textContent=run.metrics.processed+' processadas';
+   row.append(name,status);list.append(row);
+  }
+  results.append(list);
+  el('agentstate').textContent='7 agentes executados · '+run.status+' · chamadas e publicações: 0';
+  el('notice').textContent='Fluxo simulado executado. Nenhuma ação externa realizada.';
+ } catch(error){el('notice').textContent=error.message;}
+});
+</script></body></html>
