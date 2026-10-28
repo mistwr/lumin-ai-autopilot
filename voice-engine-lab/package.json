@@ -1,0 +1,12 @@
+{
+  "name": "lumin-voice-engine-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "simulate": "node src/simulate.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
