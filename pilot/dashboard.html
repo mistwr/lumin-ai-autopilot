@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LUMIN Autopilot — Piloto offline</title><style>
+:root{font-family:system-ui,Arial,sans-serif;color-scheme:dark;background:#0a0b10;color:#f4efe4}
+body{max-width:1080px;margin:auto;padding:32px 18px}h1{color:#e8c675}p,.muted{color:#aeb4c1}
+header{border-bottom:1px solid #373944;padding-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:24px 0}
+.stat,.lead{background:#171923;border:1px solid #343640;border-radius:14px;padding:20px}
+.stat strong{font-size:32px;display:block;color:#e8c675}.stat span{color:#bfc5cf}
+.leads{display:grid;gap:12px}.lead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tag{border:1px solid #ac925e;color:#e8c675;border-radius:24px;padding:6px 12px}
+button{background:#d7b76e;color:#141414;border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}
+select{padding:10px;background:#191b24;color:white;border:1px solid #555;border-radius:8px}
+footer{margin-top:32px;font-size:13px;color:#afb6c4}
+</style></head><body>
+<header><small class="muted">LUMIN AI · LABORATÓRIO LOCAL · SEM CONTACTOS REAIS</small><h1>Autopilot — Centro Comercial</h1><p>Simulação dinâmica executada no navegador, sem serviços externos.</p>
+<label for="tenant">Empresa de demonstração: </label><select id="tenant"><option value="demo-company">Empresa Demo A</option><option value="demo-company-b">Empresa Demo B</option></select>
+<button id="refresh">Executar simulação</button></header>
+<section id="stats" class="stats" aria-live="polite"></section><h2>Fila comercial simulada</h2><section id="leads" class="leads" aria-live="polite"></section>
+<footer>Os dados são fictícios. Não existe login, envio de chamadas, emails, SMS ou gravação de dados. Não utilizar com leads reais.</footer>
+<script type="module">
+import { dashboardForTenant } from './dashboard.mjs';
+import { syntheticLeads } from './fixtures.mjs';
+const fixtures=[...syntheticLeads,
+{id:'demo-b-001',companyId:'demo-company-b',operator:'MEO',monthlySpend:45,contractMonthsRemaining:1,wantsComparison:true}];
+const labels={qualified:'Qualificada · Revisão humana',follow_up:'Acompanhamento · Exige consentimento',not_interested:'Sem interesse · Não contactar'};
+const stats=document.querySelector('#stats'), list=document.querySelector('#leads'), tenant=document.querySelector('#tenant');
+function render(){
+ const d=dashboardForTenant(fixtures,tenant.value);
+ stats.replaceChildren();list.replaceChildren();
+ for(const [name,value] of [['Leads',d.total],['Qualificadas',d.qualified],['Acompanhamento',d.followUp],['Sem interesse',d.notInterested],['Revisão humana',d.pendingHumanApproval]]){
+  const card=document.createElement('div');card.className='stat';
+  const strong=document.createElement('strong');strong.textContent=String(value);
+  const span=document.createElement('span');span.textContent=name;card.append(strong,span);stats.append(card);
+ }
+ for(const lead of d.leads){
+  const card=document.createElement('div');card.className='lead';
+  const info=document.createElement('div'),title=document.createElement('b'),description=document.createElement('p'),tag=document.createElement('span');
+  title.textContent=lead.leadId+' · '+lead.summary.operator;
+  description.textContent=lead.summary.monthlySpend+' €/mês · '+lead.summary.contractMonthsRemaining+' meses de fidelização';
+  tag.className='tag';tag.textContent=labels[lead.status];
+  info.append(title,description);card.append(info,tag);list.append(card);
+ }
+}
+tenant.addEventListener('change',render);
+document.querySelector('#refresh').addEventListener('click',render);
+render();
+</script></body></html>
