@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LUMIN Voice Lab</title>
+<style>body{font:16px system-ui;background:#0d1018;color:#f4e7c0;max-width:650px;margin:4rem auto;padding:1rem}button{background:#d5ab53;border:0;border-radius:12px;padding:14px 20px;margin:6px;font-weight:bold;cursor:pointer}button:disabled{opacity:.45}section{background:#1c2230;border-radius:18px;padding:22px}#log{white-space:pre-wrap;color:#fff;line-height:1.6}small{color:#bbc0c8}</style></head>
+<body><section><h1>✦ LUMIN Voice Lab</h1><p>Demonstração local de voz PT-PT no navegador, sem chamadas telefónicas.</p><label for="voice">Voz disponível:</label> <select id="voice"></select><p><button id="start">Iniciar demonstração</button><button id="listen">Falar ao microfone</button><button id="stop">Parar</button></p><small>O microfone requer autorização. O reconhecimento de voz pode depender do serviço do navegador e não é necessariamente offline. Não introduzas dados pessoais.</small><h3>Conversa</h3><div id="log" aria-live="polite"></div></section>
+<script>
+const log=document.querySelector('#log'),voiceSelect=document.querySelector('#voice'),start=document.querySelector('#start'),listen=document.querySelector('#listen'),stop=document.querySelector('#stop');
+let recognition=null;
+const append=(who,s)=>{const p=document.createElement('p');p.textContent=who+': '+s;log.append(p)};
+function voices(){const vs=speechSynthesis.getVoices();voiceSelect.replaceChildren();vs.forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v.name+' ('+v.lang+')';voiceSelect.append(o)});const pt=vs.findIndex(v=>v.lang.toLowerCase()==='pt-pt');if(pt>=0)voiceSelect.value=pt}
+if('speechSynthesis' in window){voices();speechSynthesis.onvoiceschanged=voices}else{start.disabled=true;append('Sistema','Este navegador não suporta síntese de voz.')}
+function speak(s){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang='pt-PT';u.rate=1;const v=speechSynthesis.getVoices()[Number(voiceSelect.value)];if(v)u.voice=v;append('LUMIN',s);speechSynthesis.speak(u)}
+start.onclick=()=>speak('Olá! Sou o LUMIN, assistente virtual de demonstração. Posso ajudar a comparar serviços de telecomunicações. Qual é a sua operadora atual?');
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){listen.disabled=true;append('Sistema','Reconhecimento de voz indisponível neste navegador.')}
+listen.onclick=()=>{if(!SR)return;speechSynthesis.cancel();recognition=new SR();recognition.lang='pt-PT';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onresult=e=>{const s=e.results[0][0].transcript;append('Utilizador',s);speak('Obrigado. Para esta demonstração, ainda não tenho acesso a preços nem a contratos. Um consultor poderá confirmar as condições disponíveis.')};recognition.onerror=e=>append('Sistema','Microfone: '+e.error);recognition.start()};
+stop.onclick=()=>{recognition?.abort();speechSynthesis?.cancel();append('Sistema','Sessão interrompida.')};
+</script></body></html>
